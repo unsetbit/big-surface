@@ -1,0 +1,11 @@
+{
+	"name": "big-surface", 
+	"version": "0.1.0",
+	"main": "./dist/surface.js",
+	"ignore": [
+		"./src/**",
+		"node_modules",
+		"grunt.js",
+		"package.json"
+	]
+}
