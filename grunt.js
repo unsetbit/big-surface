@@ -5,7 +5,7 @@ module.exports = function(grunt) {
       client: {
         src: './src/surface.js',
         dest: 'dist/surface-expanded.js',
-        exportedVariable: 'createSurface',
+        exportedVariable: 'Surface',
         exports: './src/surface.js'
       },
       clientExport: {

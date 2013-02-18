@@ -1,4 +1,4 @@
-;createSurface = (function(){
+;Surface = (function(){
 var __m2 = function(module,exports){module.exports=exports;
 ;module.exports = (function(){
 var __m1 = function(module,exports){module.exports=exports;
@@ -178,35 +178,7 @@ var utils = __m1,
 	cancelAnimationFrame = utils.cancelAnimationFrame,
 	tween = __m2;
 
-module.exports = function(container){
-	var bigSurface = new BigSurface(container);
-
-	return apiFactory(bigSurface);
-};
-
-var apiFactory = module.exports.apiFactory = function(bigSurface){
-	var api = {};
-
-	api.start = bigSurface.start.bind(bigSurface);
-	api.pause = bigSurface.pause.bind(bigSurface);
-	api.refit = bigSurface.refit.bind(bigSurface);
-	api.element = bigSurface.element;
-
-	api.blur = bigSurface.setBlur.bind(bigSurface);
-	api.grayscale = bigSurface.setGrayscale.bind(bigSurface);
-	api.opacity = bigSurface.setOpacity.bind(bigSurface);
-
-	api.speed = bigSurface.setSpeedLimit.bind(bigSurface);
-	api.horizontalSpeed = bigSurface.setHorizontalSpeedLimit.bind(bigSurface);
-	api.verticalSpeed = bigSurface.setVerticalSpeedLimit.bind(bigSurface);
-
-	api.horizontalWind = bigSurface.setHorizontalWind.bind(bigSurface);
-	api.verticalWind = bigSurface.setVerticalWind.bind(bigSurface);
-	
-	return api;
-};
-
-var BigSurface = module.exports.constructor = function(container){
+var Surface = module.exports = function(container){
 	this.container = container;
 	this.element = document.createElement("div");
 	this.element.style.position = "absolute";
@@ -227,23 +199,51 @@ var BigSurface = module.exports.constructor = function(container){
 
 	this.pointerEventHandler = this.pointerEventHandler.bind(this);
 	this.step = this.step.bind(this);
-}
+};
 
-BigSurface.prototype.horizontalSpeedLimit = 4;
-BigSurface.prototype.verticalSpeedLimit = 4;
+Surface.create = function(container){
+	var surface = new Surface(container);
 
-BigSurface.prototype.horizontalWind = 0;
-BigSurface.prototype.verticalWind = 0;
+	return Surface.getApi(surface);
+};
 
-BigSurface.prototype.msPerStep = 16; // Milliseconds per step
+Surface.getApi = function(surface){
+	var api = {};
+
+	api.start = surface.start.bind(surface);
+	api.pause = surface.pause.bind(surface);
+	api.refit = surface.refit.bind(surface);
+	api.element = surface.element;
+
+	api.blur = surface.setBlur.bind(surface);
+	api.grayscale = surface.setGrayscale.bind(surface);
+	api.opacity = surface.setOpacity.bind(surface);
+
+	api.speed = surface.setSpeedLimit.bind(surface);
+	api.horizontalSpeed = surface.setHorizontalSpeedLimit.bind(surface);
+	api.verticalSpeed = surface.setVerticalSpeedLimit.bind(surface);
+
+	api.horizontalWind = surface.setHorizontalWind.bind(surface);
+	api.verticalWind = surface.setVerticalWind.bind(surface);
+	
+	return api;
+};
+
+Surface.prototype.horizontalSpeedLimit = 4;
+Surface.prototype.verticalSpeedLimit = 4;
+
+Surface.prototype.horizontalWind = 0;
+Surface.prototype.verticalWind = 0;
+
+Surface.prototype.msPerStep = 16; // Milliseconds per step
 
 // These functions take current position relative to the center and return a number between -1 and 1
-BigSurface.prototype.horizontalSpeedGradient = tween.easing.quadraticIn;
-BigSurface.prototype.verticalSpeedGradient = tween.easing.quadraticIn;
+Surface.prototype.horizontalSpeedGradient = tween.easing.quadraticIn;
+Surface.prototype.verticalSpeedGradient = tween.easing.quadraticIn;
 
-BigSurface.prototype.pointerTrackingEvents = ['mousemove', 'touchstart', 'touchend', 'touchmove'];
+Surface.prototype.pointerTrackingEvents = ['mousemove', 'touchstart', 'touchend', 'touchmove'];
 
-BigSurface.prototype.start = function(){
+Surface.prototype.start = function(){
 	if(this.active) return;
 	this.active = true;
 
@@ -254,14 +254,14 @@ BigSurface.prototype.start = function(){
 	this.animationRequestId = requestAnimationFrame(this.step);
 };
 
-BigSurface.prototype.pause = function(){
+Surface.prototype.pause = function(){
 	if(!this.active) return;
 	this.active = false;
 	cancelAnimationFrame(this.animationRequestId);
 	this.detachPointerListeners();
 };
 
-BigSurface.prototype.step = function(){
+Surface.prototype.step = function(){
 	this.refit();
 
 	var currentTime = Date.now(),
@@ -277,7 +277,7 @@ BigSurface.prototype.step = function(){
 	this.animationRequestId = requestAnimationFrame(this.step);
 };
 
-BigSurface.prototype.attachPointerListeners = function(){
+Surface.prototype.attachPointerListeners = function(){
 	var self = this;
 	this.pointerTrackingEvents.forEach(function(event){
 		self.container.addEventListener(event, self.pointerEventHandler);
@@ -285,7 +285,7 @@ BigSurface.prototype.attachPointerListeners = function(){
 	this.container.addEventListener("mousemove", self.pointerEventHandler);
 };
 
-BigSurface.prototype.detachPointerListeners = function(){
+Surface.prototype.detachPointerListeners = function(){
 	var self = this;
 	this.pointerTrackingEvents.forEach(function(event){
 		self.container.removeEventListener(event, self.pointerEventHandler);
@@ -294,7 +294,7 @@ BigSurface.prototype.detachPointerListeners = function(){
 
 // This updates the x and y speed multipliers based on the pointers relative position to the
 // center of the container element
-BigSurface.prototype.pointerEventHandler = function(e){
+Surface.prototype.pointerEventHandler = function(e){
 	// If touch event, find first touch
 	var pointer = e.changedTouches && e.changedTouches[0] || e;
 
@@ -305,7 +305,7 @@ BigSurface.prototype.pointerEventHandler = function(e){
 	this.speedMultiplierY = this.verticalSpeedGradient(y - this.halfHeight, 0, (y > this.halfHeight? -1 : 1), this.halfHeight);
 };
 
-BigSurface.prototype.refit = function(width, height){
+Surface.prototype.refit = function(width, height){
 	var rect = this.container.getBoundingClientRect();
 
 	this.width = rect.width;
@@ -318,7 +318,7 @@ BigSurface.prototype.refit = function(width, height){
 	this.left = rect.left;
 };
 
-BigSurface.prototype.setHorizontalWind = function(target, duration, easingFunc){
+Surface.prototype.setHorizontalWind = function(target, duration, easingFunc){
 	if(!duration) return this.horizontalWind = target;
 
 	easingFunc = easingFunc || (this.horizontalWind < target)? tween.easing.quadraticIn : tween.easing.quadraticOut;
@@ -326,7 +326,7 @@ BigSurface.prototype.setHorizontalWind = function(target, duration, easingFunc){
 	tween(easingFunc, this, "horizontalWind", target, duration);
 };
 
-BigSurface.prototype.setVerticalWind = function(target, duration, easingFunc){
+Surface.prototype.setVerticalWind = function(target, duration, easingFunc){
 	if(!duration) return this.verticalWind = target;
 
 	easingFunc = easingFunc || (this.verticalWind < target)? tween.easing.quadraticIn : tween.easing.quadraticOut;
@@ -334,7 +334,7 @@ BigSurface.prototype.setVerticalWind = function(target, duration, easingFunc){
 	tween(easingFunc, this, "verticalWind", target, duration);
 };
 
-BigSurface.prototype.setSpeedLimit = function(target, duration, easingFunc, callback){
+Surface.prototype.setSpeedLimit = function(target, duration, easingFunc, callback){
 	if(!duration){
 		this.horizontalSpeedLimit = target;
 		this.verticalSpeedLimit = target;
@@ -345,7 +345,7 @@ BigSurface.prototype.setSpeedLimit = function(target, duration, easingFunc, call
 	this.setVerticalSpeedLimit(target, duration, easingFunc, callback);
 };
 
-BigSurface.prototype.setHorizontalSpeedLimit = function(target, duration, easingFunc, callback){
+Surface.prototype.setHorizontalSpeedLimit = function(target, duration, easingFunc, callback){
 	if(!duration) return this.horizontalSpeedLimit = target;
 
 	easingFunc = easingFunc || (this.horizontalSpeedLimit < target)? tween.easing.quadraticIn : tween.easing.quadraticOut;
@@ -353,7 +353,7 @@ BigSurface.prototype.setHorizontalSpeedLimit = function(target, duration, easing
 	tween(easingFunc, this, "horizontalSpeedLimit", target, duration, callback);
 };
 
-BigSurface.prototype.setVerticalSpeedLimit = function(target, duration, easingFunc, callback){
+Surface.prototype.setVerticalSpeedLimit = function(target, duration, easingFunc, callback){
 	if(!duration) return this.verticalSpeedLimit = target;
 	
 	easingFunc = easingFunc || (this.verticalSpeedLimit < target)? tween.easing.quadraticIn : tween.easing.quadraticOut;
@@ -361,51 +361,51 @@ BigSurface.prototype.setVerticalSpeedLimit = function(target, duration, easingFu
 	tween(easingFunc, this, "verticalSpeedLimit", target, duration, callback);
 };
 
-BigSurface.prototype.setBlur = function(target, duration){
+Surface.prototype.setBlur = function(target, duration){
 	if(duration !== void 0) this.setCssTransition("-webkit-filter", duration + "s");
 	this.setCssFilter("blur", target + "px");
 };
 
-BigSurface.prototype.setGrayscale = function(target, duration){
+Surface.prototype.setGrayscale = function(target, duration){
 	if(duration !== void 0) this.setCssTransition("-webkit-filter", duration + "s");
 	this.setCssFilter("grayscale", target);
 };
 
-BigSurface.prototype.setOpacity = function(target, duration){
+Surface.prototype.setOpacity = function(target, duration){
 	if(duration !== void 0) this.setCssTransition("opacity", duration + "s");
 	this.element.style.opacity = target;
 };
 
-BigSurface.prototype.setCssTransform = function(name, value){
+Surface.prototype.setCssTransform = function(name, value){
 	this.cssTransforms[name] = value;
 	this.updateMultiAttributeStyle(utils.transformAttribute, this.cssTransforms);
 };
 
-BigSurface.prototype.setCssFilter = function(name, value){
+Surface.prototype.setCssFilter = function(name, value){
 	this.cssFilters[name] = value;
 	this.updateMultiAttributeStyle(utils.filterAttribute, this.cssFilters);
 };
 
-BigSurface.prototype.setCssTransition = function(name, value){
+Surface.prototype.setCssTransition = function(name, value){
 	this.cssTransitions[name] = value;
 	this.updateMultiAttributeStyle(utils.transitionAttribute, this.cssTransitions, true);
 };
 
-BigSurface.prototype.cssTransitions = {
+Surface.prototype.cssTransitions = {
 	"-webkit-filter": "0s",
 	opacity: "0s"	
 };
 
-BigSurface.prototype.cssFilters = {
+Surface.prototype.cssFilters = {
 	blur: "0px",
 	grayscale: "0"
 };
 
-BigSurface.prototype.cssTransforms = {
+Surface.prototype.cssTransforms = {
 	translate: "0px, 0px"
 };
 
-BigSurface.prototype.updateMultiAttributeStyle = function(styleName, attributes, withComma){
+Surface.prototype.updateMultiAttributeStyle = function(styleName, attributes, withComma){
 	var name,
 		list = [];
 
