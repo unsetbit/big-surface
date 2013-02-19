@@ -3,15 +3,15 @@ module.exports = function(grunt) {
   grunt.initConfig({
     hug: {
       client: {
-        src: './src/surface.js',
+        src: './src/Surface.js',
         dest: 'dist/surface-expanded.js',
         exportedVariable: 'Surface',
-        exports: './src/surface.js'
+        exports: './src/Surface.js'
       },
       clientExport: {
-        src: './src/surface.js',
+        src: './src/Surface.js',
         dest: 'dist/surface-module.js',
-        exports: './src/surface.js'
+        exports: './src/Surface.js'
       }
     }, 
     min: {

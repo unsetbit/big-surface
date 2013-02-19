@@ -342,7 +342,7 @@ Surface.prototype.setSpeedLimit = function(target, duration, easingFunc, callbac
 	}
 
 	this.setHorizontalSpeedLimit(target, duration, easingFunc, callback);
-	this.setVerticalSpeedLimit(target, duration, easingFunc, callback);
+	this.setVerticalSpeedLimit(target, duration, easingFunc);
 };
 
 Surface.prototype.setHorizontalSpeedLimit = function(target, duration, easingFunc, callback){
