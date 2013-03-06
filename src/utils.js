@@ -21,14 +21,24 @@ var bodyStyle = document.body.style;
 exports.transformAttribute = 	(bodyStyle.msTransform !== void 0) && "msTransform" ||
 								(bodyStyle.webkitTransform !== void 0) && "webkitTransform" ||
 								(bodyStyle.MozTransform !== void 0) && "MozTransform" ||
-								(bodyStyle.transform !== void 0) && "transform";
+								"transform";
 								
 exports.transitionAttribute =	(bodyStyle.msTransition !== void 0) && "msTransition" ||
 								(bodyStyle.webkitTransition !== void 0) && "webkitTransition" ||
 								(bodyStyle.MozTransition !== void 0) && "MozTransition" || 
-								(bodyStyle.transition !== void 0) && "transition";
+								"transition";
 
 exports.filterAttribute = 		(bodyStyle.msFilter !== void 0) && "msFilter" ||
 								(bodyStyle.webkitFilter !== void 0) && "webkitFilter" ||
 								(bodyStyle.MozFilter !== void 0) && "MozFilter" ||
-								(bodyStyle.filter !== void 0) && "filter";
+								"filter";
+
+exports.cssFilterAttribute = 	(bodyStyle.msFilter !== void 0) && "-ms-filter" ||
+								(bodyStyle.webkitFilter !== void 0) && "-webkit-filter" ||
+								(bodyStyle.MozFilter !== void 0) && "-moz-filter" ||
+								"filter";
+
+exports.cssTransformAttribute = (bodyStyle.msTransform !== void 0) && "-ms-transform" ||
+								(bodyStyle.webkitTransform !== void 0) && "-webkit-transform" ||
+								(bodyStyle.MozTransform !== void 0) && "-moz-transform" ||
+								"filter";

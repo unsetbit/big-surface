@@ -6,12 +6,14 @@ module.exports = function(grunt) {
         src: './src/Surface.js',
         dest: 'dist/surface-expanded.js',
         exportedVariable: 'Surface',
-        exports: './src/Surface.js'
+        exports: './src/Surface.js',
+        path: ['./components']
       },
       clientExport: {
         src: './src/Surface.js',
         dest: 'dist/surface-module.js',
-        exports: './src/Surface.js'
+        exports: './src/Surface.js',
+        path: ['./components']
       }
     }, 
     min: {
