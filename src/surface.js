@@ -1,4 +1,7 @@
 require('eventEmitter/EventEmitter.js');
+var Hammer = require('hammer/dist/hammer.js');
+
+var isTouchDevice = 'ontouchstart' in document.documentElement;
 
 var utils = require('./utils.js'),
 	requestAnimationFrame = utils.requestAnimationFrame,
@@ -25,6 +28,7 @@ var Surface = module.exports = function(container){
 	this.cssTransforms = {};
 
 	this.pointerEventHandler = this.pointerEventHandler.bind(this);
+	this.dragEventHandler = this.dragEventHandler.bind(this);
 	this.transformStep = this.transformStep.bind(this);
 };
 
@@ -108,7 +112,7 @@ Surface.prototype.msPerStep = 16; // Milliseconds per step
 Surface.prototype.horizontalVelocityGradient = tween.easing.quadraticIn;
 Surface.prototype.verticalVelocityGradient = tween.easing.quadraticIn;
 
-Surface.prototype.pointerTrackingEvents = ['mousemove', 'touchstart', 'touchend', 'touchmove'];
+Surface.prototype.pointerTrackingEvents = ['mousemove'];//, 'touchstart', 'touchend', 'touchmove'];
 
 Surface.prototype.refit = function(){
 	var rect = this.container.getBoundingClientRect();
@@ -252,10 +256,12 @@ Surface.prototype.attachPointerListeners = function(){
 	if(this.trackingPointer) return;
 	this.trackingPointer = true;
 
-	var self = this;
-	this.pointerTrackingEvents.forEach(function(event){
-		self.container.addEventListener(event, self.pointerEventHandler);
-	});
+	if(isTouchDevice){
+		Hammer(this.container).on("drag", this.dragEventHandler);	
+	} else {
+		this.container.addEventListener("mousemove", this.pointerEventHandler);
+	}
+	
 
 	this.emitter.emit("pointer tracking start");
 };
@@ -264,12 +270,26 @@ Surface.prototype.detachPointerListeners = function(){
 	if(!this.trackingPointer) return;
 	this.trackingPointer = false;
 	
-	var self = this;
-	this.pointerTrackingEvents.forEach(function(event){
-		self.container.removeEventListener(event, self.pointerEventHandler);
-	});
+	if(isTouchDevice){
+		Hammer(this.container).off("drag", this.dragEventHandler);	
+	} else {
+		this.container.removeEventListener("mousemove", this.pointerEventHandler);
+	}
+	
 
 	this.emitter.emit("pointer tracking stop");
+};
+
+Surface.prototype.dragEventHandler = function(e){
+	this.horizontalVelocity = e.gesture.velocityX;
+	this.verticalVelocity = e.gesture.velocityY;
+
+	if(this.horizontalVelocity > 1) this.horizontalVelocity = 1;
+	if(this.verticalVelocity > 1) this.verticalVelocity = 1;
+
+	if(e.gesture.deltaX < 0) this.horizontalVelocity *= -1;
+	if(e.gesture.deltaY < 0) this.verticalVelocity *= -1;
+
 };
 
 // This updates the x and y speed multipliers based on the pointers relative position to the
