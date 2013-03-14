@@ -22,7 +22,7 @@ var Surface = module.exports = function(container){
 	
 	this.horizontalVelocity = 0;
 	this.verticalVelocity = 0;
-	
+
 	this.cssTransitions = {};
 	this.cssFilters = {};
 	this.cssTransforms = {};
@@ -46,6 +46,7 @@ Surface.getApi = function(surface){
 
 	api.refit = surface.refit.bind(surface);
 	api.element = surface.element;
+	api.container = surface.container;
 
 	api.css = surface.setCssStyle.bind(surface);
 	api.cssTransform = surface.setCssTransform.bind(surface);
@@ -133,6 +134,7 @@ Surface.prototype.startTransformLoop = function(){
 	this.transforming = true;
 	this.lastStepTime = Date.now();
 	this.animationRequestId = requestAnimationFrame(this.transformStep);
+	this.attachPointerListeners();
 	this.emitter.emit("move start");
 };
 
@@ -152,10 +154,6 @@ Surface.prototype.transformStep = function(){
 	this.lastVerticalDisplacement = lagScalar * (this.baseVerticalVelocity + (this.verticalVelocity * this.verticalVelocityScalar));
 	this.lastStepTime = currentTime;
 	
-	if(!(this.horizontalVelocityScalar || this.verticalVelocityScalar) && this.trackingPointer){
-		this.detachPointerListeners();	
-	}
-
 	if(this.lastHorizontalDisplacement || this.lastVerticalDisplacement){
 		this.horizontalPosition += this.lastHorizontalDisplacement;
 		this.verticalPosition += this.lastVerticalDisplacement;
@@ -163,9 +161,6 @@ Surface.prototype.transformStep = function(){
 		this.animationRequestId = requestAnimationFrame(this.transformStep);
 	} else if(this.trackingPointer || this.baseHorizontalVelocity || this.baseVerticalVelocity){
 		this.animationRequestId = requestAnimationFrame(this.transformStep);
-	} else {
-		// If the next step won't do anything, stop the transform loop
-		this.stopTransformLoop();
 	}
 };
 
@@ -181,8 +176,6 @@ Surface.prototype.setBaseHorizontalVelocity = function(target, duration, easingF
 	} else {
 		this.baseHorizontalVelocity = target;
 	}
-
-	if(!this.transforming && target) this.startTransformLoop();
 };
 
 Surface.prototype.setBaseVerticalVelocity = function(target, duration, easingFunc){
@@ -197,8 +190,6 @@ Surface.prototype.setBaseVerticalVelocity = function(target, duration, easingFun
 	} else {
 		this.baseVerticalVelocity = target;
 	}
-
-	if(!this.transforming && target) this.startTransformLoop();
 };
 
 Surface.prototype.setVelocityScalar = function(target, duration, easingFunc, callback){
@@ -226,11 +217,6 @@ Surface.prototype.setHorizontalVelocityScalar = function(target, duration, easin
 	} else {
 		this.horizontalVelocityScalar = target;
 	}
-
-	if(target !== 0){
-		if(!this.transforming) this.startTransformLoop();
-		if(!this.trackingPointer) this.attachPointerListeners();
-	}
 };
 
 Surface.prototype.setVerticalVelocityScalar = function(target, duration, easingFunc, callback){
@@ -245,12 +231,11 @@ Surface.prototype.setVerticalVelocityScalar = function(target, duration, easingF
 	} else {
 		this.verticalVelocityScalar = target;
 	}
-
-	if(target !== 0){
-		if(!this.transforming) this.startTransformLoop();
-		if(!this.trackingPointer) this.attachPointerListeners();
-	}
 };
+
+function preventDefault(e){
+	e.preventDefault();
+}
 
 Surface.prototype.attachPointerListeners = function(){
 	if(this.trackingPointer) return;
@@ -258,11 +243,11 @@ Surface.prototype.attachPointerListeners = function(){
 
 	if(isTouchDevice){
 		Hammer(this.container).on("drag", this.dragEventHandler);	
+		this.container.addEventListener("touchmove", preventDefault);
 	} else {
 		this.container.addEventListener("mousemove", this.pointerEventHandler);
 	}
 	
-
 	this.emitter.emit("pointer tracking start");
 };
 
@@ -272,6 +257,7 @@ Surface.prototype.detachPointerListeners = function(){
 	
 	if(isTouchDevice){
 		Hammer(this.container).off("drag", this.dragEventHandler);	
+		this.container.removeEventListener("touchmove", preventDefault);
 	} else {
 		this.container.removeEventListener("mousemove", this.pointerEventHandler);
 	}
@@ -283,6 +269,9 @@ Surface.prototype.detachPointerListeners = function(){
 Surface.prototype.dragEventHandler = function(e){
 	this.horizontalVelocity = e.gesture.velocityX;
 	this.verticalVelocity = e.gesture.velocityY;
+	
+	if(this.horizontalVelocity < 0.1) this.horizontalVelocity = 0;
+	if(this.verticalVelocity < 0.1) this.verticalVelocity = 0;
 
 	if(this.horizontalVelocity > 1) this.horizontalVelocity = 1;
 	if(this.verticalVelocity > 1) this.verticalVelocity = 1;
