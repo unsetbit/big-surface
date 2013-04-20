@@ -6,8 +6,8 @@ anywhere in side the element, whether it's `top:100px; left:-300px;` or `top:-47
 uses CSS3 transforms and hardware acceleration for smooth movement within the limitless plane.
 
 ## Use
-For plain JavaScript applications, use the [dist/surface.js](https://raw.github.com/ozanturgut/big-surface/master/dist/surface.js), which will inject the Surface object to the global
-scope. If you're using NodeJS (or any system that uses the export/require pattern), use [dist/surface-module.js](https://raw.github.com/ozanturgut/big-surface/master/dist/surface-module.js), 
+For plain JavaScript applications, use the [dist/surface.js](https://raw.github.com/oztu/big-surface/master/dist/surface.js), which will inject the Surface object to the global
+scope. If you're using NodeJS (or any system that uses the export/require pattern), use [dist/surface-module.js](https://raw.github.com/oztu/big-surface/master/dist/surface-module.js), 
 as it exports the Surface object.
 
 ## API
