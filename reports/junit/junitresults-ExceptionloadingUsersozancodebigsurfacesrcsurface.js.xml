@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<testsuites>
+ <testsuite name="Exception loading: /Users/ozan/code/big-surface/src/surface.js" timestamp="2014-09-07T23:10:03" hostname="localhost" time="0.011" errors="0" tests="1" skipped="0" failures="1">
+  <testcase classname="Exception loading: /Users/ozan/code/big-surface/src/surface.js" name="Error" time="0.002">
+   <failure type="exception" message="ReferenceError: window is not defined"><![CDATA[ReferenceError: window is not defined
+    at Object.<anonymous> (/Users/ozan/code/big-surface/bower_components/hammerjs/hammer.js:1547:4)
+    at Module._compile (module.js:456:26)
+    at Module._extensions..js (module.js:474:10)
+    at Object.Module._extensions..js (/Users/ozan/code/big-surface/node_modules/boilerplate-gulp/node_modules/gulp-istanbul/node_modules/istanbul/lib/hook.js:101:13)
+    at Module.load (module.js:356:32)
+    at Function.Module._load (module.js:312:12)
+    at Module.require (module.js:364:17)
+    at require (module.js:380:17)
+    at Object.<anonymous> (/Users/ozan/code/big-surface/src/surface.js:9:165)
+    at Module._compile (module.js:456:26)]]>
+   </failure>
+  </testcase>
+ </testsuite>
+</testsuites>

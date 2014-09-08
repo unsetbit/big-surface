@@ -1,0 +1,49 @@
+{
+  "name": "easy-tween",
+  "version": "0.2.0",
+  "description": "Tweening for any numerical JavaScript object property",
+  "keywords": [
+    "tween",
+    "transition"
+  ],
+  "main": [
+    "dist/easyTween.js"
+  ],
+  "authors": [
+    "Ozan Turgut <ozanturgut@gmail.com>"
+  ],
+  "moduleType": [
+    "amd",
+    "node",
+    "globals"
+  ],
+  "license": "APACHE 2",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "example",
+    "src",
+    "dev",
+    "build",
+    "package.json",
+    "gulpfile.js",
+    "package.json"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:oztu/big-surface.git"
+  },
+  "dependencies": {},
+  "homepage": "https://github.com/oztu/easy-tween",
+  "_release": "0.2.0",
+  "_resolution": {
+    "type": "version",
+    "tag": "v0.2.0",
+    "commit": "50e1b673112dd903c574f5e9fffd26d6c8a626c2"
+  },
+  "_source": "git://github.com/oztu/easy-tween.git",
+  "_target": "~0.2.0",
+  "_originalSource": "easy-tween",
+  "_direct": true
+}

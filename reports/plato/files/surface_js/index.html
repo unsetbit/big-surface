@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - surface.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>surface.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">66.35</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">362</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">81.61</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">4.46</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">&#039;use strict&#039;;
+
+var EventEmitter = require(&#039;../bower_components/eventEmitter/EventEmitter.js&#039;);
+var hammer = require(&#039;../bower_components/hammerjs/hammer.js&#039;);
+
+var isTouchDevice = &#039;ontouchstart&#039; in document.documentElement;
+
+var utils = require(&#039;./utils.js&#039;),
+	tween = require(&#039;../bower_components/easy-tween/dist/easyTween.js&#039;);
+
+var Surface = module.exports = function(container){
+	this.container = container;
+	this.element = document.createElement(&#039;div&#039;);
+	this.element.style.position = &#039;absolute&#039;;
+	container.appendChild(this.element);
+
+	this.refit();
+	this.emitter = new EventEmitter();
+
+	this.horizontalPosition = 0;
+	this.verticalPosition = 0;
+	
+	this.horizontalVelocity = 0;
+	this.verticalVelocity = 0;
+
+	this.cssTransitions = {};
+	this.cssFilters = {};
+	this.cssTransforms = {};
+
+	this.pointerEventHandler = this.pointerEventHandler.bind(this);
+	this.dragEventHandler = this.dragEventHandler.bind(this);
+	this.transformStep = this.transformStep.bind(this);
+};
+
+Surface.create = function(container){
+	var surface = new Surface(container);
+
+	return Surface.getApi(surface);
+};
+
+Surface.getApi = function(surface){
+	var api = {};
+
+	api.on = surface.emitter.on.bind(surface.emitter);
+	api.removeListener = surface.emitter.removeListener.bind(surface.emitter);
+
+	api.refit = surface.refit.bind(surface);
+	api.element = surface.element;
+	api.container = surface.container;
+
+	api.css = surface.setCssStyle.bind(surface);
+	api.cssTransform = surface.setCssTransform.bind(surface);
+	api.cssFilter = surface.setCssFilter.bind(surface);
+	api.cssTransition = surface.setCssTransition.bind(surface);
+
+	api.speed = surface.setVelocityScalar.bind(surface);
+	api.horizontalSpeed = surface.setHorizontalVelocityScalar.bind(surface);
+	api.verticalSpeed = surface.setVerticalVelocityScalar.bind(surface);
+
+	api.horizontalWind = surface.setBaseHorizontalVelocity.bind(surface);
+	api.verticalWind = surface.setBaseVerticalVelocity.bind(surface);
+	
+	Object.defineProperty(api, &#039;speedGradient&#039;, {
+		get: function(){
+			return (surface.horizontalVelocityGradient === surface.verticalVelocityGradient)? 
+						surface.horizontalVelocityGradient : 
+						void 0;
+		},
+		set: function(value){
+			surface.horizontalVelocityGradient = value;
+			surface.verticalVelocityGradient = value;
+		}
+	});
+
+	Object.defineProperty(api, &#039;horizontalVelocityGradient&#039;, {
+		get: function(){ return surface.horizontalVelocityGradient;},
+		set: function(value){ surface.horizontalVelocityGradient = value;}
+	});
+
+	Object.defineProperty(api, &#039;verticalVelocityGradient&#039;, {
+		get: function(){ return surface.verticalVelocityGradient;},
+		set: function(value){ surface.verticalVelocityGradient = value;}
+	});
+
+	Object.defineProperty(api, &#039;width&#039;, {
+		get: function(){return surface.width;}
+	});
+
+	Object.defineProperty(api, &#039;height&#039;, {
+		get: function(){return surface.height;}
+	});
+
+	Object.defineProperty(api, &#039;top&#039;, {
+		get: function(){return surface.top;}
+	});
+
+	Object.defineProperty(api, &#039;left&#039;, {
+		get: function(){return surface.left;}
+	});
+
+	return api;
+};
+
+Surface.prototype.horizontalVelocityScalar = 0;
+Surface.prototype.verticalVelocityScalar = 0;
+
+Surface.prototype.baseHorizontalVelocity = 0;
+Surface.prototype.baseVerticalVelocity = 0;
+
+Surface.prototype.msPerStep = 16; // Milliseconds per step
+
+// These functions take current position relative to the center and return a number between -1 and 1
+Surface.prototype.horizontalVelocityGradient = tween.easing.quadraticIn;
+Surface.prototype.verticalVelocityGradient = tween.easing.quadraticIn;
+
+Surface.prototype.pointerTrackingEvents = [&#039;mousemove&#039;];//, &#039;touchstart&#039;, &#039;touchend&#039;, &#039;touchmove&#039;];
+
+Surface.prototype.refit = function(){
+	var rect = this.container.getBoundingClientRect();
+
+	this.width = rect.width;
+	this.halfWidth = this.width / 2;
+
+	this.height = rect.height;
+	this.halfHeight = this.height / 2;
+
+	this.top = rect.top;
+	this.left = rect.left;
+};
+
+Surface.prototype.startTransformLoop = function(){
+	if(this.transforming) return;
+
+	this.transforming = true;
+	this.lastStepTime = Date.now();
+	this.animationRequestId = requestAnimationFrame(this.transformStep);
+	this.attachPointerListeners();
+	this.emitter.emit(&#039;move start&#039;);
+};
+
+Surface.prototype.stopTransformLoop = function(){
+	if(!this.transforming) return;
+
+	this.transforming = false;
+	cancelAnimationFrame(this.animationRequestId);
+	this.emitter.emit(&#039;move stop&#039;);
+};
+
+Surface.prototype.transformStep = function(){
+	var currentTime = Date.now(),
+		lagScalar = (currentTime - this.lastStepTime) / this.msPerStep;
+	
+	this.lastHorizontalDisplacement = lagScalar * (this.baseHorizontalVelocity + 
+		(this.horizontalVelocity * this.horizontalVelocityScalar));
+	this.lastVerticalDisplacement = lagScalar * (this.baseVerticalVelocity + 
+		(this.verticalVelocity * this.verticalVelocityScalar));
+	this.lastStepTime = currentTime;
+	
+	if(this.lastHorizontalDisplacement || this.lastVerticalDisplacement){
+		this.horizontalPosition += this.lastHorizontalDisplacement;
+		this.verticalPosition += this.lastVerticalDisplacement;
+		this.setCssTransform(&#039;translate&#039;, this.horizontalPosition + &#039;px, &#039; + this.verticalPosition + &#039;px&#039;);
+		this.animationRequestId = requestAnimationFrame(this.transformStep);
+	} else if(this.trackingPointer || this.baseHorizontalVelocity || this.baseVerticalVelocity){
+		this.animationRequestId = requestAnimationFrame(this.transformStep);
+	}
+};
+
+Surface.prototype.setBaseHorizontalVelocity = function(target, duration, easingFunc){
+	if(target === void 0) return this.baseHorizontalVelocity;
+
+	if(this.horizontalWindTween) this.horizontalWindTween.pause();
+
+	if(duration){
+		duration *= 1000; // Tweening occurs in milliseconds
+		easingFunc = easingFunc || (this.baseHorizontalVelocity &lt; target)? 
+			tween.easing.quadraticIn : tween.easing.quadraticOut;
+		this.horizontalWindTween = tween(easingFunc, this, &#039;baseHorizontalVelocity&#039;, target, duration);
+	} else {
+		this.baseHorizontalVelocity = target;
+	}
+};
+
+Surface.prototype.setBaseVerticalVelocity = function(target, duration, easingFunc){
+	if(target === void 0) return this.baseVerticalVelocity;
+	
+	if(this.verticalWindTween) this.verticalWindTween.pause();
+
+	if(duration){
+		duration *= 1000; // Tweening occurs in milliseconds
+		easingFunc = easingFunc || (this.baseVerticalVelocity &lt; target)? 
+			tween.easing.quadraticIn : tween.easing.quadraticOut;
+		this.verticalWindTween = tween(easingFunc, this, &#039;baseVerticalVelocity&#039;, target, duration);
+	} else {
+		this.baseVerticalVelocity = target;
+	}
+};
+
+Surface.prototype.setVelocityScalar = function(target, duration, easingFunc, callback){
+	if(target === void 0){
+		if(this.horizontalVelocityScalar === this.verticalVelocityScalar){
+			return this.horizontalVelocityScalar;
+		}
+
+		return void 0;
+	}
+	
+	this.setHorizontalVelocityScalar(target, duration, easingFunc, callback);
+	this.setVerticalVelocityScalar(target, duration, easingFunc);
+};
+
+Surface.prototype.setHorizontalVelocityScalar = function(target, duration, easingFunc, callback){
+	if(target === void 0) return this.horizontalVelocityScalar;
+
+	if(this.horizontalSpeedTween) this.horizontalSpeedTween.pause();
+
+	if(duration){
+		duration *= 1000; // Tweening occurs in milliseconds
+		easingFunc = easingFunc || (this.horizontalVelocityScalar &lt; target)? 
+			tween.easing.quadraticIn : tween.easing.quadraticOut;
+		this.horizontalSpeedTween = tween(easingFunc, this, &#039;horizontalVelocityScalar&#039;, target, duration, callback);
+	} else {
+		this.horizontalVelocityScalar = target;
+	}
+};
+
+Surface.prototype.setVerticalVelocityScalar = function(target, duration, easingFunc, callback){
+	if(target === void 0) return this.verticalVelocityScalar;
+
+	if(this.verticalSpeedTween) this.verticalSpeedTween.pause();
+
+	if(duration){
+		duration *= 1000; // Tweening occurs in milliseconds
+		easingFunc = easingFunc || (this.verticalVelocityScalar &lt; target)? 
+			tween.easing.quadraticIn : tween.easing.quadraticOut;
+		this.verticalSpeedTween = tween(easingFunc, this, &#039;verticalVelocityScalar&#039;, target, duration, callback);
+	} else {
+		this.verticalVelocityScalar = target;
+	}
+};
+
+function preventDefault(e){
+	e.preventDefault();
+}
+
+Surface.prototype.attachPointerListeners = function(){
+	if(this.trackingPointer) return;
+	this.trackingPointer = true;
+
+	if(isTouchDevice){
+		hammer(this.container).on(&#039;drag&#039;, this.dragEventHandler);	
+		this.container.addEventListener(&#039;touchmove&#039;, preventDefault);
+	} else {
+		this.container.addEventListener(&#039;mousemove&#039;, this.pointerEventHandler);
+	}
+	
+	this.emitter.emit(&#039;pointer tracking start&#039;);
+};
+
+Surface.prototype.detachPointerListeners = function(){
+	if(!this.trackingPointer) return;
+	this.trackingPointer = false;
+	
+	if(isTouchDevice){
+		hammer(this.container).off(&#039;drag&#039;, this.dragEventHandler);	
+		this.container.removeEventListener(&#039;touchmove&#039;, preventDefault);
+	} else {
+		this.container.removeEventListener(&#039;mousemove&#039;, this.pointerEventHandler);
+	}
+	
+
+	this.emitter.emit(&#039;pointer tracking stop&#039;);
+};
+
+Surface.prototype.dragEventHandler = function(e){
+	this.horizontalVelocity = e.gesture.velocityX;
+	this.verticalVelocity = e.gesture.velocityY;
+	
+	if(this.horizontalVelocity &lt; 0.1) this.horizontalVelocity = 0;
+	if(this.verticalVelocity &lt; 0.1) this.verticalVelocity = 0;
+
+	if(this.horizontalVelocity &gt; 1) this.horizontalVelocity = 1;
+	if(this.verticalVelocity &gt; 1) this.verticalVelocity = 1;
+
+	if(e.gesture.deltaX &lt; 0) this.horizontalVelocity *= -1;
+	if(e.gesture.deltaY &lt; 0) this.verticalVelocity *= -1;
+
+};
+
+// This updates the x and y speed multipliers based on the pointers relative position to the
+// center of the container element
+Surface.prototype.pointerEventHandler = function(e){
+	// If touch event, find first touch
+	var pointer = (e.changedTouches &amp;&amp; e.changedTouches[0] || e),
+		x = pointer.clientX - this.left,
+		y = pointer.clientY - this.top;
+
+	this.horizontalVelocity = this.horizontalVelocityGradient(
+		x - this.halfWidth, 
+		0, 
+		(x &gt; this.halfWidth? -1 : 1), 
+		this.halfWidth
+	);
+	this.verticalVelocity = this.verticalVelocityGradient(
+		y - this.halfHeight, 
+		0, 
+		(y &gt; this.halfHeight? -1 : 1), 
+		this.halfHeight
+	);
+};
+
+Surface.prototype.setCssStyle = function(name, value, duration){
+	if(value === void 0) return this.element.style[name];
+
+	if(duration !== void 0) this.setCssTransition(name, duration + &#039;s&#039;);
+	
+	this.element.style[name] = value;
+};
+
+Surface.prototype.setCssTransform = function(name, value){
+	if(value === void 0) return this.cssTransforms[name];
+
+	this.cssTransforms[name] = value;
+	this.updateMultiAttributeStyle(utils.transformAttribute, this.cssTransforms);
+};
+
+Surface.prototype.setCssFilter = function(name, value, duration){
+	if(value === void 0) return this.cssFilters[name];
+	
+	if(duration !== void 0) this.setCssTransition(utils.cssFilterAttribute, duration + &#039;s&#039;);
+	
+	this.cssFilters[name] = value;
+	this.updateMultiAttributeStyle(utils.filterAttribute, this.cssFilters);
+};
+
+Surface.prototype.setCssTransition = function(name, value){
+	if(value === void 0) return this.cssTransitions[name];
+	
+	this.cssTransitions[name] = value;
+	this.updateMultiAttributeStyle(utils.transitionAttribute, this.cssTransitions, true);
+};
+
+Surface.prototype.updateMultiAttributeStyle = function(styleName, attributes, withComma){
+	var name,
+		style = &#039;&#039;,
+		first = true;
+
+	for(name in attributes){
+		if(attributes.hasOwnProperty(name)){
+			if(first) first = false;
+			else style += withComma?&#039;, &#039;: &#039; &#039;;
+
+			if(withComma){
+				style += name + &#039; &#039; + attributes[name];
+			} else {
+				style += name + &#039;(&#039; + attributes[name] + &#039;)&#039;;
+			}
+		}
+	}
+
+	this.element.style[styleName] = style;
+};</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ complexity.cyclomatic }} <br>
+    Length : {{ complexity.halstead.length }} <br>
+    Difficulty : {{ complexity.halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ complexity.halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

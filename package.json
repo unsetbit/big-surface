@@ -1,33 +1,30 @@
 {
   "name": "big-surface",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "Limitless space within DOM elements",
-  "main": "index.js",
+  "main": "src/surface.js",
   "dependencies": {},
   "devDependencies": {
-    "grunt": "~0.3.17",
-    "grunt-hug": "~0.4.1"
+    "boilerplate-gulp" :"^0.2.4",
+    "gulp": "^3.8.8"
   },
   "scripts": {
     "test": "echo 0"
   },
-  "engines": {
-    "node": "~0.8.0"
-  },
   "repository": {
     "type": "git",
-    "url": "https://github.com/ozanturgut/big-surface.git"
+    "url": "https://github.com/oztu/big-surface.git"
   },
   "keywords": [],
   "author": {
     "name": "Ozan Turgut",
     "email": "ozanturgut@gmail.com",
-    "url": "http://oztu.org"
+    "url": "http://ozan.io"
   },
   "licenses": [
     {
       "type": "Apache License 2.0",
-      "url": "https://github.com/ozanturgut/big-surface/blob/master/LICENSE-APACHE2"
+      "url": "https://github.com/oztu/big-surface/blob/master/LICENSE-APACHE2"
     }
   ]
 }

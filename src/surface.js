@@ -1,17 +1,17 @@
-require('eventEmitter/EventEmitter.js');
-var Hammer = require('hammer/dist/hammer.js');
+'use strict';
+
+var EventEmitter = require('../bower_components/eventEmitter/EventEmitter.js');
+var hammer = require('../bower_components/hammerjs/hammer.js');
 
 var isTouchDevice = 'ontouchstart' in document.documentElement;
 
 var utils = require('./utils.js'),
-	requestAnimationFrame = utils.requestAnimationFrame,
-	cancelAnimationFrame = utils.cancelAnimationFrame,
-	tween = require('../components/easy-tween/dist/tween-module.js');
+	tween = require('../bower_components/easy-tween/dist/easyTween.js');
 
 var Surface = module.exports = function(container){
 	this.container = container;
-	this.element = document.createElement("div");
-	this.element.style.position = "absolute";
+	this.element = document.createElement('div');
+	this.element.style.position = 'absolute';
 	container.appendChild(this.element);
 
 	this.refit();
@@ -60,7 +60,7 @@ Surface.getApi = function(surface){
 	api.horizontalWind = surface.setBaseHorizontalVelocity.bind(surface);
 	api.verticalWind = surface.setBaseVerticalVelocity.bind(surface);
 	
-	Object.defineProperty(api, "speedGradient", {
+	Object.defineProperty(api, 'speedGradient', {
 		get: function(){
 			return (surface.horizontalVelocityGradient === surface.verticalVelocityGradient)? 
 						surface.horizontalVelocityGradient : 
@@ -72,29 +72,29 @@ Surface.getApi = function(surface){
 		}
 	});
 
-	Object.defineProperty(api, "horizontalVelocityGradient", {
+	Object.defineProperty(api, 'horizontalVelocityGradient', {
 		get: function(){ return surface.horizontalVelocityGradient;},
 		set: function(value){ surface.horizontalVelocityGradient = value;}
 	});
 
-	Object.defineProperty(api, "verticalVelocityGradient", {
+	Object.defineProperty(api, 'verticalVelocityGradient', {
 		get: function(){ return surface.verticalVelocityGradient;},
 		set: function(value){ surface.verticalVelocityGradient = value;}
 	});
 
-	Object.defineProperty(api, "width", {
+	Object.defineProperty(api, 'width', {
 		get: function(){return surface.width;}
 	});
 
-	Object.defineProperty(api, "height", {
+	Object.defineProperty(api, 'height', {
 		get: function(){return surface.height;}
 	});
 
-	Object.defineProperty(api, "top", {
+	Object.defineProperty(api, 'top', {
 		get: function(){return surface.top;}
 	});
 
-	Object.defineProperty(api, "left", {
+	Object.defineProperty(api, 'left', {
 		get: function(){return surface.left;}
 	});
 
@@ -135,7 +135,7 @@ Surface.prototype.startTransformLoop = function(){
 	this.lastStepTime = Date.now();
 	this.animationRequestId = requestAnimationFrame(this.transformStep);
 	this.attachPointerListeners();
-	this.emitter.emit("move start");
+	this.emitter.emit('move start');
 };
 
 Surface.prototype.stopTransformLoop = function(){
@@ -143,21 +143,23 @@ Surface.prototype.stopTransformLoop = function(){
 
 	this.transforming = false;
 	cancelAnimationFrame(this.animationRequestId);
-	this.emitter.emit("move stop");
+	this.emitter.emit('move stop');
 };
 
 Surface.prototype.transformStep = function(){
 	var currentTime = Date.now(),
 		lagScalar = (currentTime - this.lastStepTime) / this.msPerStep;
 	
-	this.lastHorizontalDisplacement = lagScalar * (this.baseHorizontalVelocity + (this.horizontalVelocity * this.horizontalVelocityScalar));
-	this.lastVerticalDisplacement = lagScalar * (this.baseVerticalVelocity + (this.verticalVelocity * this.verticalVelocityScalar));
+	this.lastHorizontalDisplacement = lagScalar * (this.baseHorizontalVelocity + 
+		(this.horizontalVelocity * this.horizontalVelocityScalar));
+	this.lastVerticalDisplacement = lagScalar * (this.baseVerticalVelocity + 
+		(this.verticalVelocity * this.verticalVelocityScalar));
 	this.lastStepTime = currentTime;
 	
 	if(this.lastHorizontalDisplacement || this.lastVerticalDisplacement){
 		this.horizontalPosition += this.lastHorizontalDisplacement;
 		this.verticalPosition += this.lastVerticalDisplacement;
-		this.setCssTransform("translate", this.horizontalPosition + "px, " + this.verticalPosition + "px");
+		this.setCssTransform('translate', this.horizontalPosition + 'px, ' + this.verticalPosition + 'px');
 		this.animationRequestId = requestAnimationFrame(this.transformStep);
 	} else if(this.trackingPointer || this.baseHorizontalVelocity || this.baseVerticalVelocity){
 		this.animationRequestId = requestAnimationFrame(this.transformStep);
@@ -167,12 +169,13 @@ Surface.prototype.transformStep = function(){
 Surface.prototype.setBaseHorizontalVelocity = function(target, duration, easingFunc){
 	if(target === void 0) return this.baseHorizontalVelocity;
 
-	this.horizontalWindTween && this.horizontalWindTween.pause();
+	if(this.horizontalWindTween) this.horizontalWindTween.pause();
 
 	if(duration){
 		duration *= 1000; // Tweening occurs in milliseconds
-		easingFunc = easingFunc || (this.baseHorizontalVelocity < target)? tween.easing.quadraticIn : tween.easing.quadraticOut;
-		this.horizontalWindTween = tween(easingFunc, this, "baseHorizontalVelocity", target, duration);
+		easingFunc = easingFunc || (this.baseHorizontalVelocity < target)? 
+			tween.easing.quadraticIn : tween.easing.quadraticOut;
+		this.horizontalWindTween = tween(easingFunc, this, 'baseHorizontalVelocity', target, duration);
 	} else {
 		this.baseHorizontalVelocity = target;
 	}
@@ -181,12 +184,13 @@ Surface.prototype.setBaseHorizontalVelocity = function(target, duration, easingF
 Surface.prototype.setBaseVerticalVelocity = function(target, duration, easingFunc){
 	if(target === void 0) return this.baseVerticalVelocity;
 	
-	this.verticalWindTween && this.verticalWindTween.pause();
+	if(this.verticalWindTween) this.verticalWindTween.pause();
 
 	if(duration){
 		duration *= 1000; // Tweening occurs in milliseconds
-		easingFunc = easingFunc || (this.baseVerticalVelocity < target)? tween.easing.quadraticIn : tween.easing.quadraticOut;
-		this.verticalWindTween = tween(easingFunc, this, "baseVerticalVelocity", target, duration);
+		easingFunc = easingFunc || (this.baseVerticalVelocity < target)? 
+			tween.easing.quadraticIn : tween.easing.quadraticOut;
+		this.verticalWindTween = tween(easingFunc, this, 'baseVerticalVelocity', target, duration);
 	} else {
 		this.baseVerticalVelocity = target;
 	}
@@ -208,12 +212,13 @@ Surface.prototype.setVelocityScalar = function(target, duration, easingFunc, cal
 Surface.prototype.setHorizontalVelocityScalar = function(target, duration, easingFunc, callback){
 	if(target === void 0) return this.horizontalVelocityScalar;
 
-	this.horizontalSpeedTween && this.horizontalSpeedTween.pause();
+	if(this.horizontalSpeedTween) this.horizontalSpeedTween.pause();
 
 	if(duration){
 		duration *= 1000; // Tweening occurs in milliseconds
-		easingFunc = easingFunc || (this.horizontalVelocityScalar < target)? tween.easing.quadraticIn : tween.easing.quadraticOut;
-		this.horizontalSpeedTween = tween(easingFunc, this, "horizontalVelocityScalar", target, duration, callback);
+		easingFunc = easingFunc || (this.horizontalVelocityScalar < target)? 
+			tween.easing.quadraticIn : tween.easing.quadraticOut;
+		this.horizontalSpeedTween = tween(easingFunc, this, 'horizontalVelocityScalar', target, duration, callback);
 	} else {
 		this.horizontalVelocityScalar = target;
 	}
@@ -222,12 +227,13 @@ Surface.prototype.setHorizontalVelocityScalar = function(target, duration, easin
 Surface.prototype.setVerticalVelocityScalar = function(target, duration, easingFunc, callback){
 	if(target === void 0) return this.verticalVelocityScalar;
 
-	this.verticalSpeedTween && this.verticalSpeedTween.pause();
+	if(this.verticalSpeedTween) this.verticalSpeedTween.pause();
 
 	if(duration){
 		duration *= 1000; // Tweening occurs in milliseconds
-		easingFunc = easingFunc || (this.verticalVelocityScalar < target)? tween.easing.quadraticIn : tween.easing.quadraticOut;
-		this.verticalSpeedTween = tween(easingFunc, this, "verticalVelocityScalar", target, duration, callback);
+		easingFunc = easingFunc || (this.verticalVelocityScalar < target)? 
+			tween.easing.quadraticIn : tween.easing.quadraticOut;
+		this.verticalSpeedTween = tween(easingFunc, this, 'verticalVelocityScalar', target, duration, callback);
 	} else {
 		this.verticalVelocityScalar = target;
 	}
@@ -242,13 +248,13 @@ Surface.prototype.attachPointerListeners = function(){
 	this.trackingPointer = true;
 
 	if(isTouchDevice){
-		Hammer(this.container).on("drag", this.dragEventHandler);	
-		this.container.addEventListener("touchmove", preventDefault);
+		hammer(this.container).on('drag', this.dragEventHandler);	
+		this.container.addEventListener('touchmove', preventDefault);
 	} else {
-		this.container.addEventListener("mousemove", this.pointerEventHandler);
+		this.container.addEventListener('mousemove', this.pointerEventHandler);
 	}
 	
-	this.emitter.emit("pointer tracking start");
+	this.emitter.emit('pointer tracking start');
 };
 
 Surface.prototype.detachPointerListeners = function(){
@@ -256,14 +262,14 @@ Surface.prototype.detachPointerListeners = function(){
 	this.trackingPointer = false;
 	
 	if(isTouchDevice){
-		Hammer(this.container).off("drag", this.dragEventHandler);	
-		this.container.removeEventListener("touchmove", preventDefault);
+		hammer(this.container).off('drag', this.dragEventHandler);	
+		this.container.removeEventListener('touchmove', preventDefault);
 	} else {
-		this.container.removeEventListener("mousemove", this.pointerEventHandler);
+		this.container.removeEventListener('mousemove', this.pointerEventHandler);
 	}
 	
 
-	this.emitter.emit("pointer tracking stop");
+	this.emitter.emit('pointer tracking stop');
 };
 
 Surface.prototype.dragEventHandler = function(e){
@@ -285,23 +291,33 @@ Surface.prototype.dragEventHandler = function(e){
 // center of the container element
 Surface.prototype.pointerEventHandler = function(e){
 	// If touch event, find first touch
-	var pointer = e.changedTouches && e.changedTouches[0] || e,
-		x = pointer.clientX - this.left;
+	var pointer = (e.changedTouches && e.changedTouches[0] || e),
+		x = pointer.clientX - this.left,
 		y = pointer.clientY - this.top;
 
-	this.horizontalVelocity = this.horizontalVelocityGradient(x - this.halfWidth, 0, (x > this.halfWidth? -1 : 1), this.halfWidth);
-	this.verticalVelocity = this.verticalVelocityGradient(y - this.halfHeight, 0, (y > this.halfHeight? -1 : 1), this.halfHeight);
+	this.horizontalVelocity = this.horizontalVelocityGradient(
+		x - this.halfWidth, 
+		0, 
+		(x > this.halfWidth? -1 : 1), 
+		this.halfWidth
+	);
+	this.verticalVelocity = this.verticalVelocityGradient(
+		y - this.halfHeight, 
+		0, 
+		(y > this.halfHeight? -1 : 1), 
+		this.halfHeight
+	);
 };
 
 Surface.prototype.setCssStyle = function(name, value, duration){
 	if(value === void 0) return this.element.style[name];
 
-	if(duration !== void 0) this.setCssTransition(name, duration + "s");
+	if(duration !== void 0) this.setCssTransition(name, duration + 's');
 	
 	this.element.style[name] = value;
 };
 
-Surface.prototype.setCssTransform = function(name, value, duration){
+Surface.prototype.setCssTransform = function(name, value){
 	if(value === void 0) return this.cssTransforms[name];
 
 	this.cssTransforms[name] = value;
@@ -311,7 +327,7 @@ Surface.prototype.setCssTransform = function(name, value, duration){
 Surface.prototype.setCssFilter = function(name, value, duration){
 	if(value === void 0) return this.cssFilters[name];
 	
-	if(duration !== void 0) this.setCssTransition(utils.cssFilterAttribute, duration + "s");
+	if(duration !== void 0) this.setCssTransition(utils.cssFilterAttribute, duration + 's');
 	
 	this.cssFilters[name] = value;
 	this.updateMultiAttributeStyle(utils.filterAttribute, this.cssFilters);
@@ -326,21 +342,21 @@ Surface.prototype.setCssTransition = function(name, value){
 
 Surface.prototype.updateMultiAttributeStyle = function(styleName, attributes, withComma){
 	var name,
-		style = "",
+		style = '',
 		first = true;
 
 	for(name in attributes){
 		if(attributes.hasOwnProperty(name)){
 			if(first) first = false;
-			else style += withComma?", ": " ";
+			else style += withComma?', ': ' ';
 
 			if(withComma){
-				style += name + " " + attributes[name];
+				style += name + ' ' + attributes[name];
 			} else {
-				style += name + "(" + attributes[name] + ")";
+				style += name + '(' + attributes[name] + ')';
 			}
 		}
 	}
 
 	this.element.style[styleName] = style;
-}
+};
